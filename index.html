@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Signal Alerts — Bet Point</title>
+
+<!-- PWA manifest for OneSignal bell -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#007bff">
+
+<!-- OneSignal SDK -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <style>
@@ -18,8 +24,9 @@
 let rowId = null;
 let deviceType = /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'web';
 let playerId = null;
+let linkId = null;
 
-// Show entry on load
+// Show login on page load
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry').style.display = 'block';
 });
@@ -38,9 +45,14 @@ async function submitRowId() {
     const data = await res.json();
 
     if (data.valid) {
-      localStorage.setItem('linkId', data.link_id);
+      linkId = data.link_id;
+      localStorage.setItem('linkId', linkId);
+
+      // Show main content
       document.getElementById('entry').style.display = 'none';
       document.getElementById('content').style.display = 'block';
+
+      // Initialize OneSignal after content is visible
       initOneSignal();
     } else {
       document.getElementById('errorMsg').textContent = 'Invalid password.';
@@ -59,7 +71,7 @@ function initOneSignal() {
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "2b94ad70-2518-44d4-aaef-bfb95739206f",
-      notifyButton: { enable: false }
+      notifyButton: { enable: true } // show bell
     });
 
     const isSubscribed = await OneSignal.isPushNotificationsEnabled();
@@ -77,14 +89,18 @@ function initOneSignal() {
   });
 }
 
-// Register device
+// Register device in Supabase
 function registerDevice() {
   if (!rowId || !playerId) return;
+
   fetch('https://iznxrukdqbrcxjzhvwyk.supabase.co/functions/v1/register-device', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rowId, playerId, deviceType })
-  }).then(res => res.json()).then(console.log);
+    body: JSON.stringify({ rowId, playerId, deviceType, linkId })
+  })
+  .then(res => res.json())
+  .then(console.log)
+  .catch(err => console.error('Device registration failed:', err));
 }
 </script>
 </head>
