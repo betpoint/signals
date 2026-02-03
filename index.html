@@ -1,69 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Signal Alerts — Bet Point</title>
 
-<!-- PWA Manifest -->
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#007bff">
+<!-- Web App Manifest -->
+<link rel="manifest" href="/manifest.json" />
 
 <!-- iOS home screen icon -->
-<link rel="apple-touch-icon" href="./icon-1024x1024.png">
+<link rel="apple-touch-icon" href="/icon-1024x1024.png">
 
 <!-- OneSignal SDK -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
-<style>
-  html, body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #000;
-    color: #fff;
-  }
-
-  #entry, #content, #errorMsg { display: none; }
-  #errorMsg { color: #ff4d4d; margin-top: 10px; }
-  input { padding: 10px; font-size: 16px; margin-right: 8px; }
-  button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
-  iframe { width: 100%; height: 100vh; border: none; }
-</style>
-
+<!-- OneSignal subscription + login persistence -->
 <script>
 let rowId = null;
 let linkId = null;
 let playerId = null;
 const deviceType = /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'web';
+
+// URLs for your backend
 const VERIFY_URL = 'https://iznxrukdqbrcxjzhvwyk.supabase.co/functions/v1/verify-link';
 const REGISTER_URL = 'https://iznxrukdqbrcxjzhvwyk.supabase.co/functions/v1/register-device';
-const APP_URL = 'https://bet-point.appsmith.com/app/signals/page1-68b217383a43874978908b5c?embed=true';
 
-// Auto login if stored
+// Auto-login if already stored
 window.addEventListener('DOMContentLoaded', async () => {
   const savedRow = localStorage.getItem('rowId');
   const savedLink = localStorage.getItem('linkId');
   if (savedRow && savedLink) {
     rowId = savedRow;
     linkId = savedLink;
-    showContent();
     initOneSignal();
   } else {
-    document.getElementById('entry').style.display = 'block';
+    // Show login prompt if you want (or leave empty for now)
+    const pwd = prompt("Enter your password to access Bet Point Signals");
+    if (pwd) await submitRowId(pwd);
   }
 });
 
-// Submit login
-async function submitRowId() {
-  rowId = document.getElementById('rowIdInput').value.trim();
-  if (!rowId) return alert('Please enter your password.');
-
-  document.getElementById('errorMsg').textContent = '';
+// Submit rowId to backend for verification
+async function submitRowId(inputValue) {
+  rowId = inputValue.trim();
+  if (!rowId) return alert('Password required.');
 
   try {
     const res = await fetch(VERIFY_URL, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ row_id: rowId })
     });
     const data = await res.json();
@@ -72,28 +57,17 @@ async function submitRowId() {
       linkId = data.link_id;
       localStorage.setItem('rowId', rowId);
       localStorage.setItem('linkId', linkId);
-      showContent();
       initOneSignal();
     } else {
-      const err = document.getElementById('errorMsg');
-      err.textContent = 'Invalid password.';
-      err.style.display = 'block';
+      alert('Invalid password.');
     }
   } catch (err) {
     console.error(err);
-    const errMsg = document.getElementById('errorMsg');
-    errMsg.textContent = 'Server error verifying password.';
-    errMsg.style.display = 'block';
+    alert('Server error verifying password.');
   }
 }
 
-// Show app content
-function showContent() {
-  document.getElementById('entry').style.display = 'none';
-  document.getElementById('content').style.display = 'block';
-}
-
-// OneSignal subscription
+// OneSignal subscription (exactly like your last snippet)
 function initOneSignal() {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
@@ -104,11 +78,10 @@ function initOneSignal() {
 
     let isSubscribed = await OneSignal.isPushNotificationsEnabled();
 
-    if (!isSubscribed) {
-      await OneSignal.showNativePrompt(); // prompts user to subscribe
-      isSubscribed = await OneSignal.isPushNotificationsEnabled();
-    }
+    // Prompt if not subscribed
+    if (!isSubscribed) await OneSignal.showNativePrompt();
 
+    isSubscribed = await OneSignal.isPushNotificationsEnabled();
     if (isSubscribed) {
       playerId = await OneSignal.getUserId();
       registerDevice();
@@ -126,34 +99,36 @@ function initOneSignal() {
 // Register device with backend
 function registerDevice() {
   if (!rowId || !playerId) return;
-
   fetch(REGISTER_URL, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ rowId, playerId, deviceType, linkId })
   })
   .then(res => res.json())
   .then(console.log)
   .catch(console.error);
 }
+
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(reg => console.log('Service Worker registered', reg.scope))
+    .catch(err => console.warn('SW registration failed', err));
+}
 </script>
+
+<style>
+html, body { margin:0; height:100%; width:100%; font-family:Arial,sans-serif; }
+body { display:flex; flex-direction:column; background:#000; color:#fff; }
+iframe { flex:1; border:none; width:100%; height:100%; }
+</style>
 </head>
 
 <body>
-  <h2>Signal Alerts — Bet Point</h2>
-  <p id="errorMsg"></p>
-
-  <div id="entry">
-    <input type="password" id="rowIdInput" placeholder="Enter your password" />
-    <button onclick="submitRowId()">Submit</button>
-  </div>
-
-  <div id="content">
-    <iframe 
-      src="https://bet-point.appsmith.com/app/signals/page1-68b217383a43874978908b5c?embed=true" 
-      title="Bet Point Signals App">
-    </iframe>
-  </div>
+  <!-- Embedded Appsmith App -->
+  <iframe src="https://bet-point.appsmith.com/app/signals/page1-68b217383a43874978908b5c?embed=true" 
+          title="Bet Point Signals App">
+  </iframe>
 </body>
 </html>
 
