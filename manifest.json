@@ -1,6 +1,6 @@
 {
   "name": "Bet Point Signals",
-  "short_name": "BetPoint",
+  "short_name": "ALERTS",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
@@ -11,4 +11,5 @@
     { "src": "./icon-1024x1024.png", "sizes": "1024x1024", "type": "image/png" }
   ]
 }
+
 
