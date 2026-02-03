@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Signal Alerts — Bet Point</title>
 
- <!-- iOS home screen icon -->
-<link rel="apple-touch-icon" href="icon-1024x1024.png">
+  <!-- iOS home screen icon -->
+  <link rel="apple-touch-icon" href="icon-1024x1024.png">
 
-<!-- PWA Manifest -->
-<link rel="manifest" href="./manifest.json">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.json">
 
-<meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#000000">
 
   <!-- OneSignal SDK -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -84,7 +84,6 @@
       margin-top: 12px;
     }
 
-    /* LOADING SPINNER */
     #loadingSpinner {
       width: 36px;
       height: 36px;
@@ -107,54 +106,39 @@
     let playerId = null;
     let registered = false;
 
-    const deviceType = /Mobi|Android/i.test(navigator.userAgent)
-      ? 'mobile'
-      : 'web';
-
-    const VERIFY_URL =
-      'https://iznxrukdqbrcxjzhvwyk.supabase.co/functions/v1/verify-link';
-
-    const REGISTER_URL =
-      'https://iznxrukdqbrcxjzhvwyk.supabase.co/functions/v1/register-device';
-
-    const APP_URL =
-      'https://bet-point.appsmith.com/app/signals/page1-68b217383a43874978908b5c?embed=true';
+    const deviceType = /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'web';
+    const VERIFY_URL = 'https://iznxrukdqbrcxjzhvwyk.supabase.co/functions/v1/verify-link';
+    const REGISTER_URL = 'https://iznxrukdqbrcxjzhvwyk.supabase.co/functions/v1/register-device';
+    const APP_URL = 'https://bet-point.appsmith.com/app/signals/page1-68b217383a43874978908b5c?embed=true';
 
     /* AUTO LOGIN */
     window.addEventListener('DOMContentLoaded', async () => {
       const savedLink = localStorage.getItem('linkId');
       if (!savedLink) return;
-
       try {
         const res = await fetch(VERIFY_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ link_id: savedLink })
         });
-
         const data = await res.json();
         if (data.valid) {
           linkId = savedLink;
           rowId = data.row_id;
           unlockApp();
           initOneSignal();
-        } else {
-          localStorage.removeItem('linkId');
-        }
+        } else localStorage.removeItem('linkId');
       } catch {
         localStorage.removeItem('linkId');
       }
     });
 
-    /* LOGIN SUBMIT */
     async function submitRowId() {
       const input = document.getElementById('rowIdInput');
       const spinner = document.getElementById('loadingSpinner');
       const error = document.getElementById('loginError');
-
       rowId = input.value.trim();
       if (!rowId) return;
-
       error.textContent = '';
       spinner.style.display = 'block';
 
@@ -164,17 +148,13 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ row_id: rowId })
         });
-
         const data = await res.json();
-
         if (data.valid) {
           linkId = data.link_id;
           localStorage.setItem('linkId', linkId);
           unlockApp();
           initOneSignal();
-        } else {
-          error.textContent = 'Invalid password.';
-        }
+        } else error.textContent = 'Invalid password.';
       } catch {
         error.textContent = 'Server error verifying password.';
       } finally {
@@ -182,17 +162,15 @@
       }
     }
 
-    /* UNLOCK APP */
     function unlockApp() {
       document.getElementById('loginOverlay').style.display = 'none';
       const frame = document.getElementById('appFrame');
       if (!frame.src) frame.src = APP_URL;
     }
 
-    /* ONESIGNAL */
     function initOneSignal() {
       window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function (OneSignal) {
+      OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: '2b94ad70-2518-44d4-aaef-bfb95739206f',
           notifyButton: { enable: true }
@@ -213,7 +191,6 @@
       });
     }
 
-    /* REGISTER DEVICE */
     function registerDevice() {
       if (!rowId || !playerId || registered) return;
       registered = true;
@@ -234,8 +211,7 @@
 
   <!-- LOGIN OVERLAY -->
   <div id="loginOverlay">
-    <img src="./icon-2000x2000.png" alt="Bet Point Logo" />
-
+    <img src="./icon-1024x1024.png" alt="Bet Point Logo" width="96" height="96" />
     <h2>Enter your password</h2>
     <input type="password" id="rowIdInput" placeholder="Password" />
     <button onclick="submitRowId()">Submit</button>
@@ -248,10 +224,6 @@
 
 </body>
 </html>
-
-
-
-
 
 
 
